@@ -302,6 +302,9 @@ function clientBatchOperation(mode) {
 		case 'move':
 			if ( selectedMods.length > 0 ) { window.mods.moveMods(selectedMods) }
 			break
+		case 'link':
+			if ( selectedMods.length > 0 ) { window.mods.linkMods(selectedMods) }
+			break
 		case 'delete':
 			if ( selectedMods.length > 0 ) { window.mods.deleteMods(selectedMods) }
 			break

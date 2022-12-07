@@ -785,9 +785,11 @@ ipcMain.on('toMain_copyFavorites',  () => {
 ipcMain.on('toMain_deleteMods',     (event, mods) => { createConfirmWindow('delete', modIdsToRecords(mods), mods) })
 ipcMain.on('toMain_moveMods',       (event, mods) => { createConfirmWindow('move', modIdsToRecords(mods), mods) })
 ipcMain.on('toMain_copyMods',       (event, mods) => { createConfirmWindow('copy', modIdsToRecords(mods), mods) })
+ipcMain.on('toMain_linkMods',       (event, mods) => { createConfirmWindow('link', modIdsToRecords(mods), mods) })
 ipcMain.on('toMain_realFileDelete', (event, fileMap) => { fileOperation('delete', fileMap) })
 ipcMain.on('toMain_realFileMove',   (event, fileMap) => { fileOperation('move', fileMap) })
 ipcMain.on('toMain_realFileCopy',   (event, fileMap) => { fileOperation('copy', fileMap) })
+ipcMain.on('toMain_realFileLink',   (event, fileMap) => { fileOperation('link', fileMap) })
 ipcMain.on('toMain_realFileVerCP',  (event, fileMap) => {
 	fileOperation('copy', fileMap, 'resolve')
 	setTimeout(() => {
@@ -1499,25 +1501,32 @@ function fileOperation_post(type, fileMap) {
 	foldersDirty = true
 
 	fullPathMap.forEach((file) => {
+		const inputFile     = file[0]
+		const inputRealFile = fs.realpathSync(file[0])
+
 		try {
 			switch ( type ) {
 				case 'copy' :
-					log.log.info(`Copy File : ${file[0]} -> ${file[1]}`, 'file-ops')
-					fs.copyFileSync(file[0], file[1])
+					log.log.info(`Copy File : ${inputRealFile} -> ${file[1]}`, 'file-ops')
+					fs.copyFileSync(inputRealFile, file[1])
 					break
 				case 'move' :
-					if ( path.parse(file[0]).root !== path.parse(file[1]).root ) {
-						log.log.info(`Move (cp+rm) File : ${file[0]} -> ${file[1]}`, 'file-ops')
-						fs.copyFileSync(file[0], file[1])
-						fs.rmSync(file[0])
+					if ( path.parse(inputFile).root !== path.parse(file[1]).root ) {
+						log.log.info(`Move (cp+rm) File : ${inputFile} -> ${file[1]}`, 'file-ops')
+						fs.copyFileSync(inputFile, file[1])
+						fs.rmSync(inputFile)
 					} else {
-						log.log.info(`Move (rename) File : ${file[0]} -> ${file[1]}`, 'file-ops')
-						fs.renameSync(file[0], file[1])
+						log.log.info(`Move (rename) File : ${inputFile} -> ${file[1]}`, 'file-ops')
+						fs.renameSync(inputFile, file[1])
 					}
 					break
 				case 'delete' :
-					log.log.info(`Delete File : ${file[0]}`, 'file-ops')
-					fs.rmSync(file[0], { recursive : true } )
+					log.log.info(`Delete File : ${inputFile}`, 'file-ops')
+					fs.rmSync(inputFile, { recursive : true } )
+					break
+				case 'link' :
+					log.log.info(`Link File : ${inputRealFile} -> ${file[1]}`, 'file-ops')
+					fs.symlinkSync(inputRealFile, file[1])
 					break
 				default :
 					break
